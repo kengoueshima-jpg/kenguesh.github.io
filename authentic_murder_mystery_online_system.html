@@ -1,0 +1,2025 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Authentic Murder Mystery Online System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Firebase Standard Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;600;700;900&family=Playfair+Display:ital,wght@0,600;0,800;1,400&display=swap');
+        
+        body {
+            font-family: 'Noto Serif JP', serif;
+            background-color: #0d0805;
+            background-image: 
+                radial-gradient(circle at 50% 20%, rgba(61, 38, 22, 0.4) 0%, transparent 70%),
+                radial-gradient(circle at 80% 80%, rgba(35, 20, 10, 0.6) 0%, transparent 60%),
+                linear-gradient(to bottom, #110a06 0%, #080503 100%);
+            color: #d8c6aa;
+            min-height: 100vh;
+        }
+
+        .title-serif {
+            font-family: 'Playfair Display', 'Noto Serif JP', serif;
+        }
+
+        /* Classical Wooden Box Frame */
+        .wood-panel {
+            background: #17100b;
+            background-image: linear-gradient(180deg, #1f150e 0%, #120b07 100%);
+            border: 2px solid #5a422d;
+            box-shadow: 
+                inset 0 0 10px rgba(0, 0, 0, 0.9),
+                0 4px 15px rgba(0, 0, 0, 0.8);
+            border-radius: 0px;
+        }
+
+        /* Parchment Paper Card Style */
+        .parchment-box {
+            background: #ebdcc3;
+            background-image: 
+                radial-gradient(circle at 10% 10%, rgba(200, 180, 140, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 90% 90%, rgba(180, 150, 110, 0.4) 0%, transparent 50%),
+                linear-gradient(180deg, #f2e5d0 0%, #e0ceb2 100%);
+            color: #2b1c12;
+            border: 1px solid #b39b78;
+            box-shadow: 
+                inset 0 0 12px rgba(139, 105, 60, 0.2),
+                2px 3px 8px rgba(0, 0, 0, 0.5);
+            border-radius: 0px;
+        }
+
+        /* Golden Double Border Frame */
+        .gold-double-border {
+            border: 1px solid #9c7b4f;
+            outline: 2px solid #523e25;
+            outline-offset: -5px;
+        }
+
+        /* Antique Button Style */
+        .classic-btn {
+            background: linear-gradient(180deg, #593e28 0%, #382415 100%);
+            border: 1px solid #8a6845;
+            color: #eddcc4;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.9);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+            border-radius: 0px;
+            transition: all 0.15s ease;
+        }
+        .classic-btn:hover {
+            background: linear-gradient(180deg, #6e4e34 0%, #472f1c 100%);
+            border-color: #b58e60;
+            color: #ffffff;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.7);
+        }
+        .classic-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .share-btn {
+            background: linear-gradient(180deg, #2b4c38 0%, #173022 100%);
+            border: 1px solid #4a7559;
+            color: #d2e8db;
+            border-radius: 0px;
+        }
+        .share-btn:hover {
+            background: linear-gradient(180deg, #375f46 0%, #1e3d2b 100%);
+            color: #ffffff;
+        }
+
+        .classic-input {
+            background-color: #0f0905;
+            border: 1px solid #4a3725;
+            color: #e0d1bb;
+            border-radius: 0px;
+        }
+        .classic-input:focus {
+            border-color: #947249;
+            outline: none;
+        }
+
+        /* Toast Notification */
+        #toast-notification {
+            transition: all 0.3s ease;
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0d0805;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #42301f;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between selection:bg-amber-950 selection:text-amber-100">
+
+    <!-- Header -->
+    <header class="border-b border-[#382718] bg-[#110b07] sticky top-0 z-50 shadow-md">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <i class="fa-solid fa-masks-theater text-amber-700 text-xl"></i>
+                <div>
+                    <h1 id="app-header-title" class="text-base font-bold tracking-widest title-serif text-[#ebdcc3]">AI MYSTERY SYSTEM</h1>
+                    <div id="room-info-tag" class="hidden text-[10px] text-[#806a52] font-mono">部屋番号 : <span id="display-room-id" class="text-amber-500 font-bold">---</span></div>
+                </div>
+            </div>
+            
+            <div class="flex items-center space-x-3">
+                <div id="phase-badge" class="px-3 py-1 text-xs font-semibold text-[#ebdcc3] flex items-center space-x-2 bg-[#1f140b] border border-[#4d3622]">
+                    <i id="phase-icon" class="fa-solid fa-book-open text-amber-600"></i>
+                    <span id="phase-text">待機中</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="max-w-7xl mx-auto px-4 py-6 flex-grow w-full">
+        
+        <!-- STEP 1: Lobby & Scenario Selection -->
+        <div id="lobby-screen" class="max-w-2xl mx-auto space-y-6">
+            
+            <div class="wood-panel p-6 gold-double-border space-y-5">
+                <div class="text-center space-y-1">
+                    <span class="text-[11px] text-amber-600 tracking-widest uppercase font-bold">重厚タイムテーブル・サブミッション採点システム</span>
+                    <h2 class="text-2xl font-extrabold title-serif text-[#f2e6d3]">戯曲マーダーミステリー</h2>
+                    <p class="text-[11px] text-[#8c745c]">全員で真相を探る本格推理・マルチエンディングシステム</p>
+                </div>
+
+                <!-- Scenario Selection Cards -->
+                <div class="space-y-3">
+                    <label class="block text-xs font-semibold text-[#ad977d] flex items-center">
+                        <i class="fa-solid fa-scroll mr-1.5 text-amber-700"></i>プレイするシナリオを選択してください:
+                    </label>
+
+                    <!-- Scenario 0: N-Ken Metal Scenario -->
+                    <div onclick="selectScenario('nken')" id="scen-card-nken" class="parchment-box p-4 border-2 border-amber-800 cursor-pointer hover:opacity-95 transition space-y-2">
+                        <div class="flex justify-between items-start">
+                            <span class="font-bold text-[#3b2415] text-sm">🎸 『爆音のサバトと断ち切られたフライングV』</span>
+                            <span class="text-[9px] bg-[#3b2415] text-[#ebdcc3] px-2 py-0.5">ヘヴィメタル / 5人完全対応</span>
+                        </div>
+                        <p class="text-[11px] text-[#2e1e12] leading-relaxed">
+                            大学の軽音サークル「ニューミュージック研究会（N研）」。定期演奏会前夜、伝説のフライングVギターが破壊され部長が倒れていた。北九州出身の金髪天パチビメガネ（食用JK）が突如乱入し現場を大混乱に陥れる！
+                        </p>
+                        <div class="text-[10px] text-[#7a5a3a]">推奨人数: 1〜5人 | 難易度: ★★★★☆ (ハプニング注意)</div>
+                    </div>
+
+                    <!-- Scenario 1 -->
+                    <div onclick="selectScenario('pendulum')" id="scen-card-pendulum" class="wood-panel p-4 border border-[#382618] cursor-pointer hover:opacity-95 transition space-y-2">
+                        <div class="flex justify-between items-start">
+                            <span class="font-bold text-[#ebdcc3] text-sm">① 『落日と振り子の密室』</span>
+                            <span class="text-[9px] bg-[#21140a] text-amber-400 px-2 py-0.5 border border-[#4a3421]">本格物理密室 / 5人完全対応</span>
+                        </div>
+                        <p class="text-[11px] text-[#a8937d] leading-relaxed">
+                            夕陽が洋館の書斎を赤く染める刻、からくり時計の音とともに作家・時任幹比古が殺害された。扉と窓は内側から施錠された完全密室。残されたのは冷気と狂った振り子……。
+                        </p>
+                        <div class="text-[10px] text-[#806a52]">推奨人数: 1〜5人 | 難易度: ★★★★☆</div>
+                    </div>
+
+                    <!-- Scenario 2 -->
+                    <div onclick="selectScenario('salome')" id="scen-card-salome" class="wood-panel p-4 border border-[#382618] cursor-pointer hover:opacity-95 transition space-y-2">
+                        <div class="flex justify-between items-start">
+                            <span class="font-bold text-[#ebdcc3] text-sm">② 『漆黒のサロメと仮面の宴』</span>
+                            <span class="text-[9px] bg-[#21140a] text-amber-400 px-2 py-0.5 border border-[#4a3421]">愛憎サスペンス / 5人完全対応</span>
+                        </div>
+                        <p class="text-[11px] text-[#a8937d] leading-relaxed">
+                            大西洋を航行する豪華客船の仮面舞踏会。仮面で顔を隠した貴族たちの中で、富豪・オルロック伯爵がワインを口にし毒殺された。交錯する過去と愛憎の結末は……。
+                        </p>
+                        <div class="text-[10px] text-[#806a52]">推奨人数: 1〜5人 | 難易度: ★★★☆☆</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Player Entry Form -->
+            <div class="wood-panel p-5 space-y-4">
+                <div class="space-y-1">
+                    <label class="block text-xs font-semibold text-[#ad977d]">参列者名（あなたのプレイヤー名）</label>
+                    <input type="text" id="player-name-input" placeholder="名前を入力（例: 探偵A）" value="探偵A" class="w-full classic-input px-3 py-2 text-xs">
+                </div>
+
+                <div class="grid grid-cols-2 gap-3 pt-1">
+                    <button id="create-room-btn" type="button" class="py-2.5 classic-btn font-bold text-xs">
+                        <i class="fa-solid fa-key mr-1.5"></i>このシナリオで部屋を作成
+                    </button>
+                    <div class="flex space-x-2">
+                        <input type="text" id="join-room-id" placeholder="部屋コード" class="w-2/3 classic-input px-3 py-2 text-xs font-mono uppercase text-amber-400">
+                        <button id="join-room-btn" type="button" class="w-1/3 classic-btn font-bold text-xs">入室</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Role Selection Panel -->
+            <div id="role-selection-panel" class="hidden wood-panel p-5 space-y-4">
+                <div class="flex justify-between items-center border-b border-[#332213] pb-2">
+                    <h3 class="text-xs font-bold text-amber-600 uppercase tracking-wider flex items-center">
+                        <i class="fa-solid fa-users mr-2"></i>配役の選択 (1〜5人)
+                    </h3>
+                    <span id="player-count-tag" class="text-[10px] bg-[#21140a] text-amber-400 px-2.5 py-0.5 border border-[#4a3421]">0/5 参列</span>
+                </div>
+
+                <div id="roles-list" class="space-y-2">
+                    <!-- Dynamic Roles -->
+                </div>
+
+                <button id="start-game-btn" type="button" class="hidden w-full py-2.5 classic-btn font-bold text-xs text-amber-200">
+                    事件を開始しハンドアウトへ進む
+                </button>
+            </div>
+        </div>
+
+        <!-- STEP 2: Handout Reading Screen -->
+        <div id="handout-reading-screen" class="hidden max-w-2xl mx-auto space-y-5">
+            <div class="wood-panel p-6 gold-double-border space-y-4">
+                <div class="text-center space-y-1 border-b border-[#332213] pb-2">
+                    <span class="text-[11px] text-amber-600 font-bold uppercase tracking-wider">秘匿資料 / Handout</span>
+                    <h2 id="handout-role-title" class="text-xl font-bold title-serif text-[#f2e6d3]">役職名</h2>
+                </div>
+
+                <!-- Timetable Card in Parchment -->
+                <div class="parchment-box p-4 space-y-2 text-xs">
+                    <div class="font-bold text-[#3b2415] border-b border-[#c8b493] pb-1 flex justify-between items-center">
+                        <span>【事件当日の詳細タイムテーブル（アリバイ照合用）】</span>
+                        <i class="fa-solid fa-stopwatch text-[#7a5a3a]"></i>
+                    </div>
+                    <div id="handout-timetable-container" class="space-y-2 font-mono text-[11px] text-[#2e1e12] pt-1 max-h-64 overflow-y-auto leading-relaxed">
+                        <!-- Detailed Timetable Items -->
+                    </div>
+                </div>
+
+                <!-- Context & Intentions -->
+                <div class="bg-[#0f0905] p-3.5 border border-[#2e1f12] text-xs space-y-2">
+                    <span class="font-bold text-amber-500 block">【当時の詳細な背景と人間関係】</span>
+                    <p id="handout-detail-text" class="text-[#a8937d] leading-relaxed">---</p>
+                </div>
+
+                <!-- Sub-mission Section -->
+                <div class="bg-[#1f1008] p-3.5 border border-[#472714] text-xs space-y-1.5">
+                    <span class="font-bold text-amber-400 flex items-center justify-between">
+                        <span>🎯 個人サブミッション（達成で＋30点加算）</span>
+                        <span class="text-[10px] bg-[#3b180d] text-amber-300 px-2 py-0.5 border border-[#5e2715]">秘匿必須</span>
+                    </span>
+                    <p id="handout-secret-text" class="text-[#d8c2aa] leading-relaxed font-semibold">---</p>
+                    <p class="text-[10px] text-[#917961] pt-1 border-t border-[#3b2415]">※他人に怪しまれた際、『追究ターン』で言い逃れて動機を悟られないように立ち回ってください。</p>
+                </div>
+
+                <button id="ready-phase-btn" type="button" class="w-full py-3 classic-btn font-bold text-xs text-amber-200">
+                    内容を記憶した（全体議論①を開始する）
+                </button>
+            </div>
+        </div>
+
+        <!-- STEP 3: Main Game Board -->
+        <div id="game-board" class="hidden grid grid-cols-1 lg:grid-cols-12 gap-5">
+            
+            <!-- Left Column: Handout Toggle, Items Inventory & Public Evidence (4 cols) -->
+            <div class="lg:col-span-4 space-y-4">
+                
+                <!-- Role Card & Accordion Handout Re-view -->
+                <div class="wood-panel p-4 space-y-2">
+                    <div class="flex justify-between items-center border-b border-[#332213] pb-1">
+                        <span id="my-role-name" class="font-bold text-amber-500 text-xs">役職名</span>
+                        <span class="text-[10px] bg-[#21140a] text-amber-400 px-2 py-0.5 border border-[#4a3421]">あなた</span>
+                    </div>
+
+                    <!-- Toggle Handout Button -->
+                    <button onclick="toggleHandoutView()" type="button" class="w-full classic-btn py-1.5 px-2 text-[11px] font-bold flex justify-between items-center text-[#ebdcc3]">
+                        <span><i class="fa-solid fa-book-open mr-1.5 text-amber-600"></i>自分のハンドアウト・サブミッション確認</span>
+                        <i id="handout-chevron" class="fa-solid fa-chevron-down text-xs text-[#8c745c]"></i>
+                    </button>
+
+                    <!-- Collapsible Handout Section -->
+                    <div id="collapsible-handout" class="hidden space-y-2 pt-1 text-[11px]">
+                        <div class="parchment-box p-2.5 space-y-1 text-[#2e1e12]">
+                            <span class="font-bold text-[#3b2415] block border-b border-[#c8b493] pb-0.5">【タイムテーブル再確認】</span>
+                            <div id="mini-timetable-list" class="font-mono text-[10px] space-y-1 max-h-48 overflow-y-auto">
+                                <!-- Dynamic Timetable -->
+                            </div>
+                        </div>
+                        <div class="bg-[#0f0905] p-2 border border-[#2e1f12] text-[#a8937d]">
+                            <b class="text-amber-500 flex items-center mb-1"><i class="fa-solid fa-bullseye mr-1"></i>個人サブミッション（＋30点）</b>
+                            <span id="mini-secret-text">---</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Personal Inventory Items (Private Items) -->
+                <div class="wood-panel p-4 space-y-2 border-l-4 border-l-amber-700">
+                    <div class="flex justify-between items-center border-b border-[#332213] pb-1">
+                        <h3 class="text-xs font-bold text-[#ebdcc3] uppercase tracking-wider flex items-center">
+                            <i class="fa-solid fa-box-archive text-amber-600 mr-1.5"></i>あなたが所有するアイテム
+                        </h3>
+                        <span id="my-items-count" class="text-[10px] bg-[#21140a] text-amber-400 px-2 py-0.5 border border-[#4a3421]">0個所持</span>
+                    </div>
+
+                    <div id="private-items-list" class="space-y-2.5 text-xs">
+                        <p id="no-private-items" class="text-[10px] text-[#806a52] italic text-center py-2">所持しているアイテムはありません。現場を調査して獲得してください。</p>
+                    </div>
+                </div>
+
+                <!-- Shared Facts in Parchment (Public Records) -->
+                <div class="wood-panel p-4 space-y-2">
+                    <div class="flex justify-between items-center border-b border-[#332213] pb-1">
+                        <h3 class="text-xs font-bold text-[#ad977d] uppercase tracking-wider flex items-center">
+                            <i class="fa-solid fa-scroll mr-1.5 text-amber-700"></i>全員に共有された事実・質問
+                        </h3>
+                        <span id="evidence-counter" class="text-[10px] bg-[#21140a] text-amber-400 px-2 py-0.5 border border-[#4a3421]">0件</span>
+                    </div>
+                    
+                    <div id="shared-evidence-list" class="space-y-2 max-h-52 overflow-y-auto text-xs">
+                        <p id="no-evidence-text" class="text-[#806a52] italic text-center py-4 text-[11px]">まだ公表された情報はありません。</p>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Right Column: Timeline & Discussion Panel (8 cols) -->
+            <div class="lg:col-span-8 flex flex-col h-[650px] wood-panel overflow-hidden">
+                
+                <!-- Current Phase Banner -->
+                <div class="bg-[#0f0905] px-4 py-2.5 border-b border-[#332213] text-xs flex justify-between items-center">
+                    <span id="phase-instruction-text" class="text-[#d8c6aa] font-bold flex items-center">
+                        <i class="fa-solid fa-users mr-2 text-amber-700"></i>フェーズ情報を取得中...
+                    </span>
+                    <button id="next-phase-trigger-btn" type="button" class="hidden classic-btn px-3 py-1 text-[11px] font-bold text-amber-200">
+                        次フェーズへ進む →
+                    </button>
+                </div>
+
+                <!-- Main Log & Event Feed -->
+                <div id="timeline-log" class="flex-grow p-4 overflow-y-auto space-y-3 bg-[#110a06]">
+                    <!-- Dynamic Messages -->
+                </div>
+
+                <!-- AI Processing Indicator -->
+                <div id="ai-loading-bar" class="hidden bg-[#0f0905] border-t border-b border-[#332213] px-4 py-2 text-xs text-amber-400 flex items-center justify-between animate-pulse">
+                    <span class="flex items-center">
+                        <i class="fa-solid fa-magnifying-glass mr-2 text-amber-600"></i>
+                        <span>AIが指定箇所の客観的状況・アイテム獲得を記録中...</span>
+                    </span>
+                    <i class="fa-solid fa-spinner fa-spin text-amber-600"></i>
+                </div>
+
+                <!-- Input Controls Area -->
+                <div class="p-4 bg-[#0f0905] border-t border-[#332213] space-y-3">
+                    
+                    <!-- Preset Commands Bar for Investigation Phase -->
+                    <div id="command-phase-inputs" class="hidden space-y-2">
+                        <span class="text-[11px] font-bold text-[#ad977d] block">
+                            🔍 現場観察コマンド（選択して観察事実やアイテムを獲得）:
+                        </span>
+                        <div id="preset-commands-container" class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                            <!-- Dynamic Presets -->
+                        </div>
+                        <div class="flex space-x-2 pt-1">
+                            <input type="text" id="command-text-input" placeholder="気になる物品や観察したい箇所を入力..." class="flex-grow classic-input px-3 py-2 text-xs">
+                            <button id="submit-command-btn" type="button" class="classic-btn font-bold px-4 py-2 text-xs text-amber-200">観察実行</button>
+                        </div>
+                    </div>
+
+                    <!-- Discussion Prompt (Discord Voice Chat Guidance & Accusation/Interrogation Feature) -->
+                    <div id="discussion-phase-inputs" class="hidden space-y-2.5">
+                        <div class="p-2.5 bg-[#170e08] border border-[#332213] text-center">
+                            <p class="text-xs text-amber-400 font-bold flex items-center justify-center">
+                                <i class="fa-headset fa-solid mr-2 text-amber-600"></i>通話（Discord等）でタイムテーブルの食い違いや不審な行動を議論してください
+                            </p>
+                        </div>
+
+                        <!-- Sub-mission Accusation/Interrogation Form -->
+                        <div class="parchment-box p-3 space-y-2 text-xs">
+                            <span class="font-bold text-[#3b2415] flex items-center justify-between text-[11px]">
+                                <span>🎯 【サブミッション問いただし】怪しい人物の不審行動を追求する</span>
+                                <span class="text-[9px] text-[#7a5a3a]">秘密を暴くと相手の点数を阻止</span>
+                            </span>
+                            <div class="flex space-x-2">
+                                <select id="accuse-target-select" class="classic-input px-2 py-1 text-xs w-1/3">
+                                    <!-- Candidates -->
+                                </select>
+                                <input type="text" id="accuse-reason-input" placeholder="不審な点（例：予約表の改ざん、毒薬の所持）を追求..." class="classic-input px-3 py-1 text-xs w-2/3">
+                                <button onclick="submitInterrogation()" type="button" class="classic-btn px-3 py-1 text-xs font-bold text-amber-200 whitespace-nowrap">追求</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bottom Status Bar -->
+                    <div class="flex justify-between items-center pt-1 border-t border-[#21140a]">
+                        <span id="my-action-status" class="text-[10px] text-[#806a52]">状態: 待機中</span>
+                        <button id="vote-modal-trigger-btn" type="button" onclick="openVoteModal()" class="hidden px-3 py-1 bg-[#3d1212] hover:bg-[#521919] text-red-200 border border-[#5c1d1d] text-xs font-bold">
+                            最終指名・告発へ進む
+                        </button>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- STEP 4: Accusation Modal -->
+        <div id="vote-modal" class="hidden fixed inset-0 bg-black/85 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div class="wood-panel max-w-md w-full p-6 gold-double-border space-y-5">
+                <div class="text-center space-y-1 border-b border-[#332213] pb-2">
+                    <h3 class="text-lg font-bold title-serif text-[#f2e6d3]">最終指名・告発</h3>
+                    <p class="text-xs text-[#806a52]">共有されたアイテムとタイムテーブルの整合性から真犯人を指名してください。</p>
+                </div>
+
+                <div id="vote-candidates-list" class="space-y-2 text-xs">
+                    <!-- Dynamic Candidates List -->
+                </div>
+
+                <div class="space-y-1">
+                    <label class="block text-xs font-semibold text-[#ad977d]">密室・トリックの解明ロジック</label>
+                    <textarea id="vote-reasoning-input" rows="2" placeholder="どのように事件が構成されたか..." class="w-full classic-input p-2 text-xs"></textarea>
+                </div>
+
+                <div class="flex space-x-2">
+                    <button type="button" onclick="closeVoteModal()" class="w-1/2 py-2 bg-[#21140a] text-[#806a52] font-semibold text-xs border border-[#3d2917]">戻る</button>
+                    <button type="button" onclick="submitFinalVote()" class="w-1/2 py-2 bg-[#471212] hover:bg-[#5c1818] text-red-100 font-bold text-xs border border-[#6b1e1e]">告発を確定する</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- IMAGE POPUP MODAL (Visual Item Inspection) -->
+        <div id="image-modal" class="hidden fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-center justify-center p-4">
+            <div class="wood-panel max-w-lg w-full p-5 gold-double-border space-y-4">
+                <div class="flex justify-between items-center border-b border-[#3d2c1c] pb-2">
+                    <h3 id="modal-image-title" class="text-sm font-bold text-[#ebdcc3] flex items-center">
+                        <i class="fa-solid fa-image mr-2 text-amber-600"></i>アイテム画像検査
+                    </h3>
+                    <button type="button" onclick="closeImageModal()" class="text-xs text-[#806a52] hover:text-[#e0d1bb]">
+                        <i class="fa-solid fa-xmark text-lg"></i>
+                    </button>
+                </div>
+
+                <div id="modal-image-container" class="parchment-box p-3 text-center">
+                    <!-- Dynamic Image SVG Render -->
+                </div>
+
+                <div class="flex justify-between items-center pt-1">
+                    <span class="text-[10px] text-[#806a52]">※詳細な構造や手書き筆跡を確認できます</span>
+                    <button type="button" onclick="closeImageModal()" class="classic-btn px-4 py-1.5 text-xs font-bold text-amber-200">閉じる</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Toast Notification Container -->
+        <div id="toast-notification" class="fixed bottom-4 right-4 z-50 hidden max-w-sm px-4 py-3 bg-[#1f1008] border border-amber-800 text-amber-200 text-xs shadow-2xl space-y-1">
+            <div class="font-bold flex items-center">
+                <i class="fa-solid fa-circle-info mr-2 text-amber-500"></i><span id="toast-title">通知</span>
+            </div>
+            <p id="toast-msg" class="text-[11px] text-[#d8c6aa]">メッセージ</p>
+        </div>
+
+    </main>
+
+    <!-- Main Game Engine Script -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, updateDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Global State
+        let auth = null;
+        let db = null;
+        let appId = 'default-app-id';
+        let currentUser = null;
+        let roomId = null;
+        let selectedScenarioKey = 'nken';
+        let myRoleKey = null;
+        let roomData = null;
+        let roomUnsubscribe = null;
+        let myPrivateItems = [];
+        let isLocalFallbackMode = false;
+
+        const MODEL_NAME = "gemini-2.5-flash-preview-09-2025";
+        const apiKey = "";
+
+        // Reset to Lobby Function (Full Reset)
+        window.resetToLobby = () => {
+            if (roomUnsubscribe) {
+                try { roomUnsubscribe(); } catch(e) {}
+            }
+            roomId = null;
+            roomData = null;
+            myPrivateItems = [];
+            myRoleKey = null;
+            selectedScenarioKey = 'nken';
+            isLocalFallbackMode = false;
+            
+            document.getElementById('game-board').classList.add('hidden');
+            document.getElementById('handout-reading-screen').classList.add('hidden');
+            document.getElementById('vote-modal').classList.add('hidden');
+            document.getElementById('image-modal').classList.add('hidden');
+            document.getElementById('role-selection-panel').classList.add('hidden');
+            document.getElementById('room-info-tag').classList.add('hidden');
+            document.getElementById('lobby-screen').classList.remove('hidden');
+
+            selectScenario('nken');
+
+            const phaseText = document.getElementById('phase-text');
+            if (phaseText) phaseText.textContent = "待機中";
+        };
+
+        function showToast(title, msg, isError = false) {
+            const toast = document.getElementById('toast-notification');
+            document.getElementById('toast-title').textContent = title;
+            document.getElementById('toast-msg').textContent = msg;
+            toast.className = `fixed bottom-4 right-4 z-50 max-w-sm px-4 py-3 border text-xs shadow-2xl ${isError ? 'bg-[#3d1212] border-red-800 text-red-200' : 'bg-[#1f1008] border-amber-800 text-amber-200'}`;
+            toast.classList.remove('hidden');
+            setTimeout(() => toast.classList.add('hidden'), 4000);
+        }
+
+        // Safe Firebase Initialization
+        try {
+            appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+            let firebaseConfig = null;
+            if (typeof __firebase_config !== 'undefined' && __firebase_config) {
+                firebaseConfig = JSON.parse(__firebase_config);
+            }
+
+            if (firebaseConfig) {
+                const app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+
+                onAuthStateChanged(auth, (user) => {
+                    currentUser = user;
+                });
+
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    signInWithCustomToken(auth, __initial_auth_token).catch(() => signInAnonymously(auth));
+                } else {
+                    signInAnonymously(auth).catch((e) => console.log("Auth error:", e));
+                }
+            } else {
+                isLocalFallbackMode = true;
+            }
+        } catch (e) {
+            console.warn("Firebase init fallback:", e);
+            isLocalFallbackMode = true;
+        }
+
+        async function ensureAuth() {
+            if (currentUser) return currentUser;
+            if (isLocalFallbackMode || !auth) return { uid: 'local-user-' + Math.random().toString(36).substr(2, 5) };
+            return new Promise((resolve) => {
+                const unsubscribe = onAuthStateChanged(auth, (user) => {
+                    unsubscribe();
+                    currentUser = user || { uid: 'anon-user-' + Math.random().toString(36).substr(2, 5) };
+                    resolve(currentUser);
+                });
+                setTimeout(() => resolve({ uid: 'timeout-user-' + Math.random().toString(36).substr(2, 5) }), 1500);
+            });
+        }
+
+        const DISTURBER_EVENTS = [
+            "【乱入事件】北九州市出身の金髪天パチビメガネ（食用JK）が突如部室に乱入！「北九州の資さんうどんが一番美味いんじゃあ！」と大声を上げながら部室のポテトチップスを爆食（食用）し、アンプのVolumeツマミを勝手に最大（10）に捻り回して立ち去った！",
+            "【乱入事件】北九州市出身の金髪天パチビメガネが部室の真ん中で突然メタリカの『Master of Puppets』をデスボイスでうろ覚え熱唱！シールドに足を引っかけアンプを倒して去っていった……。",
+            "【乱入事件】金髪天パチビメガネが「これ食用ですか！？」と叫びながら、ドラムシールドのスポンジをかじり、「資さんのぼた餅食べたい……」とつぶやきながら部屋の照明を明滅させる！"
+        ];
+
+        // Master Scenarios Database (Extremely Rich 15-min Timetables for ALL Scenarios)
+        const SCENARIOS = {
+            nken: {
+                title: "爆音のサバトと断ち切られたフライングV",
+                headerTitle: "ニューミュージック研究会事件簿",
+                culpritRoleKey: "saejima",
+                isDisturberActive: true,
+                presets: [
+                    "首が折れた伝説のフライングVギターと断面",
+                    "マーシャルアンプのつまみと電源ケーブル",
+                    "ドラムのツインペダルと足元に落ちていたピック",
+                    "部室の鍵の保管箱と出入り口のドアノブ"
+                ],
+                truthExplanation: {
+                    culpritName: "冴島 (スラップベース)",
+                    method: "【破砕トリックと時間差犯行】冴島は、ベース用大型ハードケースの角を凶器にし、神崎が一人で練習していたスキを狙って頭部を殴打し気絶させ、そのままギターのネックを一撃で切断破砕しました。マーシャルアンプのVolumeを10（フルテン）にしてフィードバック音を大爆音で鳴らしておくことで、ギターが叩き割れる破砕音と神崎の悲鳴を外部に聞こえないよう完全に打ち消しました。",
+                    clues: [
+                        { name: "ベース用ハードケース外角の赤塗料痕", reason: "神崎の赤フライングVのネック塗料が付着。ケースの頑丈な外角を打撃武器として使用した痕跡。" },
+                        { name: "マーシャルアンプ Volume 10 ＆ フィードバック音", reason: "破砕音と神崎の悲鳴をカモフラージュするための爆音ノイズ壁。" },
+                        { name: "19:25の部室の一時消灯", reason: "冴島が「部室の照明が消えていた」と証言した時間帯こそ、冴島が暗闇に乗じて部室へ侵入・実行・即脱出した瞬間。" }
+                    ]
+                },
+                roles: {
+                    kanzaki: {
+                        name: "神崎 (N研部長・ギター)",
+                        description: "ヘヴィメタル至上主義の現部長。部室で気絶していた。",
+                        timetable: [
+                            "18:00 - 定期演奏会前夜。部室棟地下のN研部室を開錠し、一人でフライングVの高速ソロ練習を開始。",
+                            "18:15 - 音量が大きすぎると隣サークルから苦情が来るが突っぱねる。",
+                            "18:30 - 機材庫へ予備シールドを取りに行った際、灰原OB会長が部室棟に入っていくのを目撃。",
+                            "18:45 - 冴島（ベース）が部室へ来訪。定期演奏会のタイムテーブルや曲順を巡り激しい喧嘩に発展。",
+                            "19:05 - 喉を潤すため部室を出て1階自販機へ。白石（PA）とすれ違い「配線変えるなよ」と釘を刺す。",
+                            "19:15 - 部室に戻ると黒木（ドラム）がツインペダルを設置中。「爆音で叩くな」と一蹴。",
+                            "19:30 - 一人でソロ練習中、背後から突然重い衝撃を受け意識を失う。アンプは大爆音フィードバックノイズ状態に。",
+                            "20:00 - 騒ぎとノック音で意識を取り戻すと、命のフライングVが首を断ち切られて壊れていた。"
+                        ],
+                        detail: "ヴィンテージの赤フライングVギターを神のように信仰していたが、他バンドの予約枠を強引に削るなどサークル内で独裁的に振る舞っていた。",
+                        secret: "🎯【サブミッション】ライブのトリを務めるため、他のポップス系バンドの練習時間を勝手に削り部室の予約表を偽造した事実を追究された際と言い逃れて秘匿する（+30点）"
+                    },
+                    saejima: {
+                        name: "冴島 (スラップベース)",
+                        description: "テクニカルベース担当。メタル一色のサークル方針に不満。",
+                        timetable: [
+                            "18:15 - 部室棟裏の喫煙所で黒木と合流。「神崎の独裁をどうにかしよう」と不満をぶちまける。",
+                            "18:45 - 部室に入り神崎と対立。自分のスラップベースソロ枠を削られたことで感情が爆発。",
+                            "19:10 - 頭を冷やすため部室を出て自販機へ。灰原OB会長が1階廊下を不審にうろついているのを目撃。",
+                            "19:25 - 部室前へ戻ると何故か照明が消えていた。暗闇に乗じて部室へ入る。手持ちの重いベースハードケース角を全力で叩きつけ、神崎を殴打・ギターネックを一撃粉砕！アンプツマミを10に捻って脱出。",
+                            "19:40 - 再び自動販売機前へ戻り、缶コーヒーを飲んでアリバイを作る。",
+                            "20:00 - 騒ぎを聞きつけ「一体何があったんだ」と部室へ戻る。"
+                        ],
+                        detail: "神崎のフライングVの爆音ギターソロで自分のスラップベース音が完全に消されることに強い殺意に近い憎しみを抱いていた。",
+                        secret: "🎯【サブミッション】神崎のフライングVのネックをベースハードケース角で殴りつけて破壊した犯行を追究された際と言い逃れて秘匿し指名されない（+30点）"
+                    },
+                    kuroki: {
+                        name: "黒木 (ツインペダルドラム)",
+                        description: "パワー系ドラマー。部室の鍵を管理。",
+                        timetable: [
+                            "18:15 - 喫煙所で冴島と神崎の愚痴を叩き合う。",
+                            "18:50 - 機材庫で白石と出くわす。「ツインペダル運ぶから手伝え」と会話。",
+                            "19:00 - 機材庫からドラム用ツインペダルを持ち出す。",
+                            "19:15 - 部室にツインペダルを設置。神崎から「うるさい」と一蹴される。",
+                            "19:20 - 部室を出ると、廊下で金髪天パの不審人物が暴れているのを目撃。",
+                            "19:35 - 部長が気絶しているのに気づき、混乱。チャンスと思い机の上の部費会計帳簿を持ち出す。",
+                            "19:50 - 帳簿を裏のゴミ捨て場へ隠し、鍵をかけて部室を一度離れる。",
+                            "20:00 - 集まった全員の前で部室の鍵を開ける。"
+                        ],
+                        detail: "サークルの部費を管理していたが、自身の機材（ツインペダル）購入に10万円を無断流用していた。",
+                        secret: "🎯【サブミッション】流用した部費の会計帳簿をゴミ捨て場へ隠した行動を追究された際と言い逃れて秘匿する（+30点）"
+                    },
+                    shiraishi: {
+                        name: "白石 (PA・音響担当)",
+                        description: "機材の配線や音響設定に詳しいサークルメンバー。",
+                        timetable: [
+                            "18:00 - PA機材の点検のため部室棟1階の機材庫へ。",
+                            "18:50 - 機材庫でドラマー黒木と遭遇。",
+                            "19:05 - 部室に入りアンプの電源タップ周りを調整。神崎から「余計なことをするな」と怒鳴られる。",
+                            "19:20 - 廊下で金髪天パの不審者に絡まれ逃げる。",
+                            "19:30 - アンプから激しいフィードバックノイズの爆音が響き渡り、「また神崎さんが爆音出してる」と苦笑い。",
+                            "19:45 - 控室でライブの音響タイム表をチェック。",
+                            "20:00 - 爆音ノイズが鳴り響く部室前へ向かう。"
+                        ],
+                        detail: "アンプのブレーカーが飛ぶのを恐れるあまり、PAとして危険な改造を行っていた。",
+                        secret: "🎯【サブミッション】ブレーカーが落ちないよう勝手に許容量を超える太い違法電源コードに配線変更した過失を追究された際と言い逃れる（+30点）"
+                    },
+                    haibara: {
+                        name: "灰原 (サークルOB会長)",
+                        description: "定期演奏会の監査のため訪れたサークルOB。",
+                        timetable: [
+                            "18:00 - OB会費の集金とサークル会計監査のため部室棟へ。",
+                            "18:30 - 廊下で神崎部長が機材庫に向かうのを目撃。",
+                            "18:50 - 機材庫で帳簿と実際の高価マイク本数が合わないことに気づき激怒。",
+                            "19:10 - 1階廊下を不審に歩く冴子（ベース）とすれ違う。",
+                            "19:30 - 爆音ノイズが鳴り響く中、部室棟裏の喫煙所で一服。",
+                            "19:45 - 部室前で不審者に絡まれ足止めを食らう。",
+                            "20:00 - ノイズの止まらない部室前で黒木に鍵を開けさせる。"
+                        ],
+                        detail: "現役サークルの自堕落な部費運営と備品管理の甘さに呆れ果てていた。",
+                        secret: "🎯【サブミッション】サークルの部費不足を証拠として突きつけるため、部室の高価な備品マイクを秘かに鞄へ持ち出していた事実を追究された際と言い逃れる（+30点）"
+                    }
+                }
+            },
+            pendulum: {
+                title: "落日と振り子の密室",
+                headerTitle: "落日と振り子の密室",
+                culpritRoleKey: "saeko",
+                isDisturberActive: false,
+                presets: ["被害者の遺体と胸の毒針を観察", "書斎扉の鍵穴とサムターンの構造", "書斎の机と間取り図を探す", "窓・西日・空調の設定温度"],
+                truthExplanation: {
+                    culpritName: "時任 冴子 (妻・元研究員)",
+                    method: "集中空調で書斎を18度に急速冷却し振り子金属を収縮させて作動周期を早め、時任を毒針トラップに誘導。西日の照射でサムターンが熱膨張を起こし自動再施錠された。",
+                    clues: [{ name: "エアコン設定18度", reason: "振り子を短縮させ時計周期を早めた。" }, { name: "空調ダクト見取り図", reason: "空き部屋からの温調操作証明。" }]
+                },
+                roles: {
+                    amamiya: {
+                        name: "雨宮 蓮 (担当編集)",
+                        description: "原稿回収のため滞在。",
+                        timetable: [
+                            "15:30 - 時任邸到着。応接間で待機。",
+                            "15:50 - 廊下で弁護士の灰原を目撃。",
+                            "16:00 - 書斎前で口論。「締切は過ぎています」と迫るが突っぱねられる。",
+                            "16:15 - 廊下でお茶を運ぶ冴子を目撃。",
+                            "16:40 - 廊下の時計前を通る。針を秘かに16:45に進める。",
+                            "17:00 - 書斎から鐘の音。ノックするも返答なし。"
+                        ],
+                        detail: "締切遅れに悩まされていた。",
+                        secret: "🎯【サブミッション】時任を焦らせるハッタリで時計の針を5分進めた工作を追究された際と言い逃れる（+30点）"
+                    },
+                    saeko: {
+                        name: "時任 冴子 (妻)",
+                        description: "精密機械工学の元研究者。",
+                        timetable: [
+                            "15:00 - 書斎で時任と離婚の不和口論。",
+                            "15:50 - 廊下で灰原弁護士とすれ違い挨拶。",
+                            "16:15 - 冷たいお茶を届ける。",
+                            "16:25 - 隣の空き部屋でエアコンを18度に設定。",
+                            "16:50 - 自室で読書。窓から強い西日。",
+                            "17:00 - 鐘の音とともに書斎前へ。"
+                        ],
+                        detail: "研究成果の盗用に憤っていた。",
+                        secret: "🎯【サブミッション】空調急冷却による殺害工作を隠し指名されない（+30点）"
+                    },
+                    kuroki: {
+                        name: "黒田 (弟子)",
+                        description: "新鋭ミステリー作家。",
+                        timetable: [
+                            "15:45 - 庭を散歩。窓越しに時任を見る。",
+                            "16:30 - 書斎でプロット盗用について激怒口論。",
+                            "16:40 - 退出時、机の薬瓶をポケットに隠す。",
+                            "16:55 - ロビーで灰原弁護士と会話。",
+                            "17:00 - 鐘の音を聞き書斎へ。"
+                        ],
+                        detail: "アイデア盗用を疑っていた。",
+                        secret: "🎯【サブミッション】時任の持病の薬瓶を盗んだ行動を秘匿する（+30点）"
+                    },
+                    shiraishi: {
+                        name: "白石 (精密技師)",
+                        description: "時計点検の技師。",
+                        timetable: [
+                            "14:00 - 振り子時計の定期点検を開始。",
+                            "15:15 - 点検終了、工具室へ移動。",
+                            "16:10 - 廊下で工具を持ち移動。",
+                            "16:35 - 西窓の窓枠建つけを微調整。",
+                            "17:00 - 鐘の音を確認。"
+                        ],
+                        detail: "金属膨張の知識を持つ。",
+                        secret: "🎯【サブミッション】サスペンションに誤って真鍮代替パーツを組み込んだミスを秘匿する（+30点）"
+                    },
+                    haibara: {
+                        name: "灰原 (弁護士)",
+                        description: "著作権管理弁護士。",
+                        timetable: [
+                            "14:30 - 応接間で時任と打ち合わせ。",
+                            "15:50 - 冴子とすれ違い挨拶。",
+                            "16:20 - 自分の部屋で書類整理。",
+                            "16:55 - 黒田と著作権について会話。",
+                            "17:00 - 鐘の音を聞き集まる。"
+                        ],
+                        detail: "遺言状作成を任されていた。",
+                        secret: "🎯【サブミッション】不利益な遺言書下書き所持を隠し通す（+30点）"
+                    }
+                }
+            },
+            salome: {
+                title: "漆黒のサロメと仮面の宴",
+                headerTitle: "漆黒のサロメと仮面の宴",
+                culpritRoleKey: "julian",
+                isDisturberActive: false,
+                presets: ["伯爵のグラスとワイン", "仮面舞踏会の記録", "客室クローゼット", "デッキ手すりの痕跡"],
+                truthExplanation: {
+                    culpritName: "ジュリアン (仮面の青年)",
+                    method: "仮面舞踏会の混雑に乗じて毒入りワイングラスとすり替えた。",
+                    clues: [{ name: "グラスの微量沈殿物", reason: "すり替えられた毒薬結晶。" }]
+                },
+                roles: {
+                    julian: {
+                        name: "ジュリアン (仮面の青年)",
+                        description: "謎の貴族。",
+                        timetable: [
+                            "19:30 - 仮面舞踏会場に入場。柱の陰から伯爵を監視。",
+                            "20:00 - 舞踏会開幕。ローズと伯爵の密談を目撃。",
+                            "20:30 - バルコニーで伯爵と密会し密かに争う。",
+                            "20:50 - 執事ハーヴィの給仕トレーの隙を伺う。",
+                            "21:00 - 乾杯のファンファーレに乗じ毒グラスへすり替え。",
+                            "21:15 - 伯爵倒れ狂騒状態に。"
+                        ],
+                        detail: "復讐のため乗船。",
+                        secret: "🎯【サブミッション】ワインに毒を盛った復讐者としての正体を隠す（+30点）"
+                    },
+                    rose: {
+                        name: "ローズ (歌姫)",
+                        description: "パトロンを持つ歌姫。",
+                        timetable: [
+                            "19:40 - 控え室でドレス調整。",
+                            "20:00 - ステージで特別歌唱。",
+                            "20:30 - 控え室で伯爵からパトロン契約打ち切りを言われる。",
+                            "20:45 - グラスに秘かに睡眠薬を入れようとするが失敗。",
+                            "21:00 - 乾杯で伯爵の隣へ。",
+                            "21:15 - 倒れる伯爵に悲鳴。"
+                        ],
+                        detail: "財政的に追い詰められていた。",
+                        secret: "🎯【サブミッション】伯爵グラスに睡眠薬を入れた企みを秘匿する（+30点）"
+                    },
+                    harvey: {
+                        name: "ハーヴィ (執事)",
+                        description: "伯爵に長年仕える執事。",
+                        timetable: [
+                            "19:00 - 伯爵客室でワインをデカンタージュ。",
+                            "19:30 - 舞踏会場へトレー搬入。",
+                            "20:10 - 貴族たちへ給仕。ジュリアンとすれ違う。",
+                            "20:55 - 乾杯用特製グラスを伯爵へ差し出す。",
+                            "21:00 - 乾杯。",
+                            "21:15 - 警察と船医へ連絡。"
+                        ],
+                        detail: "伯爵の秘密を握る。",
+                        secret: "🎯【サブミッション】伯爵の裏帳簿を盗み見していた事実を隠す（+30点）"
+                    },
+                    clara: {
+                        name: "クララ (令嬢)",
+                        description: "社交界の若き令嬢。",
+                        timetable: [
+                            "19:50 - 父親と会場へ。",
+                            "20:20 - 伯爵からダンスを要求されるが拒否。",
+                            "20:50 - 偽造パスポートを持ちデッキへ逃亡を謀る。",
+                            "21:00 - 乾杯のベル。",
+                            "21:15 - 混乱の中でパスポートを隠す。"
+                        ],
+                        detail: "政略結婚を迫られていた。",
+                        secret: "🎯【サブミッション】逃亡用の偽造パスポート所持を秘匿する（+30点）"
+                    },
+                    victor: {
+                        name: "ヴィクター (船医)",
+                        description: "客船の船医。",
+                        timetable: [
+                            "19:00 - 船医室で劇薬の小瓶の消失に気づく。",
+                            "20:00 - 隠蔽のため会場で盗んだ不審者を探す。",
+                            "20:40 - デッキで夜風を浴びる。",
+                            "21:00 - 乾杯に参加。",
+                            "21:15 - 伯爵の倒れに臨終確認。"
+                        ],
+                        detail: "薬薬品の管理担当。",
+                        secret: "🎯【サブミッション】劇薬の紛失を事故に見せかけて隠蔽していた事実を秘匿する（+30点）"
+                    }
+                }
+            }
+        };
+
+        // Sequence of Phases
+        const PHASE_SEQUENCE = [
+            { id: 'discussion_1', label: 'フェーズ 1 : 全体議論①（タイムテーブルとアリバイ照合）', type: 'discussion' },
+            { id: 'command_1', label: 'フェーズ 2 : AI現場調査①（物理的観察とアイテム獲得）', type: 'command' },
+            { id: 'discussion_2', label: 'フェーズ 3 : 全体議論②（獲得アイテムの共有と矛盾の検証）', type: 'discussion' },
+            { id: 'command_2', label: 'フェーズ 4 : AI現場調査②（裏付け調査と細部確認）', type: 'command' },
+            { id: 'discussion_final', label: 'フェーズ 5 : 最終討論＆指名投票（真相整理と告発）', type: 'discussion' }
+        ];
+
+        window.selectScenario = (key) => {
+            selectedScenarioKey = key;
+            ['nken', 'pendulum', 'salome'].forEach(k => {
+                const card = document.getElementById(`scen-card-${k}`);
+                if (card) {
+                    if (k === key) {
+                        card.className = "parchment-box p-4 border-2 border-amber-800 cursor-pointer hover:opacity-95 transition space-y-2";
+                    } else {
+                        card.className = "wood-panel p-4 border border-[#382618] cursor-pointer hover:opacity-95 transition space-y-2";
+                    }
+                }
+            });
+        };
+
+        window.quickCommand = (cmdText) => {
+            const input = document.getElementById('command-text-input');
+            if (input) input.value = cmdText;
+            submitInvestigationCommand();
+        };
+
+        window.submitInterrogation = async () => {
+            const targetSelect = document.getElementById('accuse-target-select');
+            const reasonInput = document.getElementById('accuse-reason-input');
+
+            const targetUid = targetSelect ? targetSelect.value : '';
+            const reason = reasonInput ? reasonInput.value.trim() : '';
+
+            if (!reason) {
+                showToast("注意", "追求・疑問に思う理由を入力してください。");
+                return;
+            }
+
+            const myUid = currentUser?.uid || 'local-user-id';
+            const senderName = roomData.players[myUid]?.name || 'あなた';
+            const targetName = roomData.players[targetUid]?.name || '対象者';
+
+            const logs = roomData.timeline || [];
+            logs.push({
+                type: 'chat',
+                sender: `${senderName} ➔ ${targetName}への追求`,
+                text: `「${reason}」について不審に思っています。説明してください。`
+            });
+
+            const accused = roomData.accusedMap || {};
+            accused[targetUid] = (accused[targetUid] || 0) + 1;
+            roomData.accusedMap = accused;
+
+            if (reasonInput) reasonInput.value = '';
+
+            if (!isLocalFallbackMode && db && roomId) {
+                const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', roomId);
+                await updateDoc(roomRef, { timeline: logs, accusedMap: accused }).catch(e => console.log(e));
+            } else {
+                renderActiveGameBoard();
+            }
+
+            showToast("追求完了", `${targetName}へ質問を投げかけました。`);
+        };
+
+        async function createNewRoom() {
+            const createBtn = document.getElementById('create-room-btn');
+            createBtn.disabled = true;
+
+            const user = await ensureAuth();
+            const playerName = document.getElementById('player-name-input').value.trim() || '参列者';
+            roomId = "ROOM-" + Math.floor(1000 + Math.random() * 9000);
+
+            const initialRoomState = {
+                roomId: roomId,
+                scenarioKey: selectedScenarioKey,
+                hostUid: user?.uid || 'local-user-id',
+                status: 'waiting',
+                phaseIndex: 0,
+                players: {},
+                commandsSubmitted: {},
+                evidences: [],
+                accusedMap: {},
+                timeline: [{
+                    type: 'system',
+                    text: `【事件発生】シナリオ『${SCENARIOS[selectedScenarioKey].title}』が開幕しました。`
+                }],
+                votes: {}
+            };
+
+            if (!db || isLocalFallbackMode) {
+                roomData = initialRoomState;
+                showToast("部屋を作成しました", `部屋コード: ${roomId} (ローカルモード)`);
+                renderRoomState(playerName);
+                createBtn.disabled = false;
+                return;
+            }
+
+            try {
+                const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', roomId);
+                await setDoc(roomRef, initialRoomState);
+                joinRoomSession(roomId, playerName);
+                showToast("部屋を作成しました", `部屋コード: ${roomId}`);
+            } catch (err) {
+                console.warn("Firestore error fallback:", err);
+                isLocalFallbackMode = true;
+                roomData = initialRoomState;
+                renderRoomState(playerName);
+                showToast("部屋を作成しました", `部屋コード: ${roomId}`);
+            } finally {
+                createBtn.disabled = false;
+            }
+        }
+
+        async function joinExistingRoom() {
+            const joinBtn = document.getElementById('join-room-btn');
+            joinBtn.disabled = true;
+
+            const inputId = document.getElementById('join-room-id').value.trim().toUpperCase();
+            const playerName = document.getElementById('player-name-input').value.trim() || '参列者';
+
+            if (!inputId) {
+                showToast("エラー", "部屋コードを入力してください。", true);
+                joinBtn.disabled = false;
+                return;
+            }
+
+            if (!db || isLocalFallbackMode) {
+                showToast("注意", "ローカルモードではそのまま『部屋を作成』を押してください。");
+                joinBtn.disabled = false;
+                return;
+            }
+
+            joinRoomSession(inputId, playerName);
+            joinBtn.disabled = false;
+        }
+
+        function joinRoomSession(targetRoomId, playerName) {
+            roomId = targetRoomId;
+            const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', roomId);
+
+            if (roomUnsubscribe) roomUnsubscribe();
+
+            roomUnsubscribe = onSnapshot(roomRef, (snapshot) => {
+                if (!snapshot.exists()) {
+                    showToast("エラー", "指定された部屋が見つかりません。", true);
+                    return;
+                }
+                roomData = snapshot.data();
+                selectedScenarioKey = roomData.scenarioKey || 'nken';
+                renderRoomState(playerName);
+            }, (err) => {
+                console.warn("Snapshot Error:", err);
+                isLocalFallbackMode = true;
+            });
+        }
+
+        function renderRoomState(playerName) {
+            document.getElementById('display-room-id').textContent = roomData.roomId;
+            document.getElementById('room-info-tag').classList.remove('hidden');
+            document.getElementById('app-header-title').textContent = SCENARIOS[selectedScenarioKey].headerTitle;
+
+            if (roomData.status === 'waiting') {
+                renderLobbyRoles(playerName);
+            } else if (roomData.status === 'handout') {
+                renderHandoutScreen();
+            } else if (roomData.status === 'playing') {
+                renderActiveGameBoard();
+            } else if (roomData.status === 'ended') {
+                renderEndingResult();
+            }
+        }
+
+        function renderLobbyRoles(playerName) {
+            document.getElementById('role-selection-panel').classList.remove('hidden');
+            const rolesList = document.getElementById('roles-list');
+            rolesList.innerHTML = '';
+
+            const activeScenario = SCENARIOS[selectedScenarioKey];
+            const currentPlayers = roomData.players || {};
+            const joinedCount = Object.keys(currentPlayers).length;
+            document.getElementById('player-count-tag').textContent = `${joinedCount}/5 参列`;
+
+            Object.keys(activeScenario.roles).forEach(roleKey => {
+                const roleInfo = activeScenario.roles[roleKey];
+                const takenBy = Object.values(currentPlayers).find(p => p.roleKey === roleKey);
+
+                const card = document.createElement('div');
+                card.className = "p-3 bg-[#0f0905] border border-[#2e1f12] flex justify-between items-center text-xs";
+
+                if (takenBy) {
+                    const myUid = currentUser?.uid || 'local-user-id';
+                    const isMe = takenBy.uid === myUid;
+                    if (isMe) myRoleKey = roleKey;
+
+                    card.innerHTML = `
+                        <div>
+                            <div class="font-bold text-[#ebdcc3]">${roleInfo.name}</div>
+                            <div class="text-[10px] text-amber-500">👤 担当: ${escapeHtml(takenBy.name)} ${isMe ? '(あなた)' : ''}</div>
+                        </div>
+                        <span class="text-[10px] bg-[#21140a] text-amber-400 px-2 py-0.5 border border-[#4a3421]">選択済み</span>
+                    `;
+                } else {
+                    card.innerHTML = `
+                        <div>
+                            <div class="font-bold text-[#ebdcc3]">${roleInfo.name}</div>
+                            <div class="text-[10px] text-[#7a6652]">${roleInfo.description}</div>
+                        </div>
+                        <button onclick="selectRole('${roleKey}', '${escapeHtml(playerName)}')" type="button" class="classic-btn text-[11px] px-3 py-1">選択</button>
+                    `;
+                }
+                rolesList.appendChild(card);
+            });
+
+            const myUid = currentUser?.uid || 'local-user-id';
+            if ((roomData.hostUid === myUid || isLocalFallbackMode) && joinedCount >= 0) {
+                document.getElementById('start-game-btn').classList.remove('hidden');
+            } else {
+                document.getElementById('start-game-btn').classList.add('hidden');
+            }
+        }
+
+        window.selectRole = async (roleKey, playerName) => {
+            myRoleKey = roleKey;
+            const myUid = currentUser?.uid || 'local-user-id';
+
+            const updatedPlayers = { ...roomData.players };
+            updatedPlayers[myUid] = {
+                uid: myUid,
+                name: playerName,
+                roleKey: roleKey
+            };
+
+            roomData.players = updatedPlayers;
+
+            if (!isLocalFallbackMode && db && roomId) {
+                const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', roomId);
+                await updateDoc(roomRef, { players: updatedPlayers }).catch(e => console.log(e));
+            } else {
+                renderRoomState(playerName);
+            }
+        };
+
+        async function advanceToHandoutPhase() {
+            roomData.status = 'handout';
+            if (!isLocalFallbackMode && db && roomId) {
+                const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', roomId);
+                await updateDoc(roomRef, { status: 'handout' }).catch(e => console.log(e));
+            } else {
+                renderHandoutScreen();
+            }
+        }
+
+        function renderHandoutScreen() {
+            document.getElementById('lobby-screen').classList.add('hidden');
+            document.getElementById('handout-reading-screen').classList.remove('hidden');
+
+            const activeRoles = SCENARIOS[selectedScenarioKey].roles;
+            if (!myRoleKey) myRoleKey = Object.keys(activeRoles)[0];
+
+            if (myRoleKey && activeRoles[myRoleKey]) {
+                const info = activeRoles[myRoleKey];
+                document.getElementById('handout-role-title').textContent = info.name;
+                document.getElementById('handout-detail-text').textContent = info.detail;
+                document.getElementById('handout-secret-text').textContent = info.secret;
+
+                const timetableContainer = document.getElementById('handout-timetable-container');
+                timetableContainer.innerHTML = info.timetable.map(item => `<div>• ${escapeHtml(item)}</div>`).join('');
+            }
+        }
+
+        async function readyForFirstRound() {
+            document.getElementById('handout-reading-screen').classList.add('hidden');
+            roomData.status = 'playing';
+            roomData.phaseIndex = 0;
+
+            if (!isLocalFallbackMode && db && roomId) {
+                const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', roomId);
+                await updateDoc(roomRef, { status: 'playing', phaseIndex: 0 }).catch(e => console.log(e));
+            } else {
+                renderActiveGameBoard();
+            }
+        }
+
+        function renderActiveGameBoard() {
+            document.getElementById('lobby-screen').classList.add('hidden');
+            document.getElementById('handout-reading-screen').classList.add('hidden');
+
+            if (roomData.status === 'ended') {
+                renderEndingResult();
+                return;
+            }
+
+            document.getElementById('game-board').classList.remove('hidden');
+
+            const activeScenario = SCENARIOS[selectedScenarioKey];
+            const activeRoles = activeScenario.roles;
+
+            if (myRoleKey && activeRoles[myRoleKey]) {
+                const info = activeRoles[myRoleKey];
+                document.getElementById('my-role-name').textContent = info.name;
+                document.getElementById('mini-secret-text').textContent = info.secret;
+                
+                const miniTimetable = document.getElementById('mini-timetable-list');
+                miniTimetable.innerHTML = info.timetable.map(item => `<div>• ${escapeHtml(item)}</div>`).join('');
+            }
+
+            const presetsContainer = document.getElementById('preset-commands-container');
+            presetsContainer.innerHTML = '';
+            (activeScenario.presets || []).forEach(presetText => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = "classic-btn p-2 text-left text-[11px] truncate";
+                btn.textContent = presetText;
+                btn.onclick = () => quickCommand(presetText);
+                presetsContainer.appendChild(btn);
+            });
+
+            const targetSelect = document.getElementById('accuse-target-select');
+            if (targetSelect) {
+                targetSelect.innerHTML = '';
+                Object.keys(roomData.players || {}).forEach(uid => {
+                    const p = roomData.players[uid];
+                    const opt = document.createElement('option');
+                    opt.value = uid;
+                    opt.textContent = `${p.name} (${activeRoles[p.roleKey]?.name || ''})`;
+                    targetSelect.appendChild(opt);
+                });
+            }
+
+            const currentPhaseInfo = PHASE_SEQUENCE[roomData.phaseIndex] || PHASE_SEQUENCE[0];
+            const isFinalPhase = (roomData.phaseIndex === PHASE_SEQUENCE.length - 1);
+
+            const phaseIcon = document.getElementById('phase-icon');
+            const phaseText = document.getElementById('phase-text');
+            const phaseInstructionText = document.getElementById('phase-instruction-text');
+            const nextPhaseBtn = document.getElementById('next-phase-trigger-btn');
+
+            phaseText.textContent = currentPhaseInfo.label;
+
+            if (currentPhaseInfo.type === 'command') {
+                phaseIcon.className = "fa-solid fa-magnifying-glass text-amber-600";
+                phaseInstructionText.innerHTML = `<i class="fa-solid fa-magnifying-glass text-amber-600 mr-2"></i><b>【AI現場調査】</b> 観察コマンドを実行して客観的観察事実や視覚アイテムを獲得してください。`;
+
+                document.getElementById('command-phase-inputs').classList.remove('hidden');
+                document.getElementById('discussion-phase-inputs').classList.add('hidden');
+                nextPhaseBtn.classList.add('hidden');
+            } else {
+                phaseIcon.className = "fa-solid fa-users text-amber-600";
+                phaseInstructionText.innerHTML = `<i class="fa-solid fa-users text-amber-600 mr-2"></i><b>【全体討論＆追究】</b> 他の参列者とアリバイを討論し、不審な行動理由を追求してください。`;
+
+                document.getElementById('command-phase-inputs').classList.add('hidden');
+                document.getElementById('discussion-phase-inputs').classList.remove('hidden');
+
+                const myUid = currentUser?.uid || 'local-user-id';
+                if (roomData.hostUid === myUid || isLocalFallbackMode) {
+                    nextPhaseBtn.classList.remove('hidden');
+                    if (isFinalPhase) {
+                        nextPhaseBtn.innerHTML = `最終指名・告発に進む ➔`;
+                        nextPhaseBtn.onclick = () => openVoteModal();
+                    } else {
+                        nextPhaseBtn.innerHTML = `次フェーズへ進む →`;
+                        nextPhaseBtn.onclick = () => triggerNextPhase();
+                    }
+                } else {
+                    nextPhaseBtn.classList.add('hidden');
+                }
+            }
+
+            const myUid = currentUser?.uid || 'local-user-id';
+            const myCmd = roomData.commandsSubmitted?.[myUid];
+            const actionStatusEl = document.getElementById('my-action-status');
+            if (currentPhaseInfo.type === 'command') {
+                if (myCmd) {
+                    actionStatusEl.textContent = "あなたの状態: 観察完了 ✓";
+                    actionStatusEl.className = "text-[10px] text-emerald-500 font-bold";
+                } else {
+                    actionStatusEl.textContent = "あなたの状態: 観察待ち";
+                    actionStatusEl.className = "text-[10px] text-amber-500 font-bold";
+                }
+            } else {
+                actionStatusEl.textContent = "あなたの状態: 討論参加中";
+                actionStatusEl.className = "text-[10px] text-[#806a52]";
+            }
+
+            if (isFinalPhase) {
+                document.getElementById('vote-modal-trigger-btn').classList.remove('hidden');
+            } else {
+                document.getElementById('vote-modal-trigger-btn').classList.add('hidden');
+            }
+
+            renderPrivateInventory();
+            renderEvidences(roomData.evidences || []);
+            renderTimelineLogs();
+        }
+
+        async function triggerNextPhase() {
+            if (roomData.status === 'ended') return;
+
+            if (roomData.phaseIndex < PHASE_SEQUENCE.length - 1) {
+                const nextIdx = roomData.phaseIndex + 1;
+                const logs = roomData.timeline || [];
+
+                logs.push({
+                    type: 'system',
+                    text: `--- フェーズ移行: ${PHASE_SEQUENCE[nextIdx].label} ---`
+                });
+
+                if (SCENARIOS[selectedScenarioKey].isDisturberActive) {
+                    const randomDistraction = DISTURBER_EVENTS[Math.floor(Math.random() * DISTURBER_EVENTS.length)];
+                    logs.push({
+                        type: 'ai-narrative',
+                        text: randomDistraction
+                    });
+                }
+
+                roomData.phaseIndex = nextIdx;
+                roomData.timeline = logs;
+                roomData.commandsSubmitted = {};
+
+                if (!isLocalFallbackMode && db && roomId) {
+                    const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', roomId);
+                    await updateDoc(roomRef, {
+                        phaseIndex: nextIdx,
+                        timeline: logs,
+                        commandsSubmitted: {}
+                    }).catch(e => console.log(e));
+                } else {
+                    renderActiveGameBoard();
+                }
+            } else {
+                openVoteModal();
+            }
+        }
+
+        async function submitInvestigationCommand() {
+            const inputEl = document.getElementById('command-text-input');
+            const text = inputEl ? inputEl.value.trim() : '';
+            if (!text) {
+                showToast("注意", "観察対象や気になる場所を入力または選択してください。");
+                return;
+            }
+
+            const myUid = currentUser?.uid || 'local-user-id';
+            const currentCmds = roomData.commandsSubmitted || {};
+
+            currentCmds[myUid] = {
+                playerUid: myUid,
+                roleKey: myRoleKey || 'kanzaki',
+                playerName: roomData.players[myUid]?.name || 'あなた',
+                commandText: text
+            };
+
+            roomData.commandsSubmitted = currentCmds;
+            if (inputEl) inputEl.value = '';
+
+            if (!isLocalFallbackMode && db && roomId) {
+                const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', roomId);
+                await updateDoc(roomRef, { commandsSubmitted: currentCmds }).catch(e => console.log(e));
+            }
+
+            const joinedUids = Object.keys(roomData.players);
+            const submittedUids = Object.keys(currentCmds);
+
+            if (joinedUids.every(uid => submittedUids.includes(uid)) || isLocalFallbackMode || joinedUids.length <= 1) {
+                processRoundAIResolution(currentCmds);
+            } else {
+                renderActiveGameBoard();
+            }
+        }
+
+        async function processRoundAIResolution(commands) {
+            document.getElementById('ai-loading-bar').classList.remove('hidden');
+
+            const activeRoles = SCENARIOS[selectedScenarioKey].roles;
+            const cmdSummaryList = Object.values(commands).map(c => `- ${c.playerName} (${activeRoles[c.roleKey]?.name || ''}): 「${c.commandText}」`).join('\n');
+
+            const systemPrompt = `
+あなたはマーダーミステリー『${SCENARIOS[selectedScenarioKey].title}』の現場客観データ描写アナライザーです。
+
+【重要ルール】
+- 犯人の特定や解説は厳禁。プレイヤーが観察指定した場所についての客観的事実のみを中立に提示。
+
+【各人の調査入力】
+${cmdSummaryList}
+
+【要求するJSON出力】
+1. **narrative**: 観察結果（180文字程度）。
+2. **itemFound**: 「図面」「破片」「ケース」「アンプ」「ペダル」に関する観察があれば視覚アイテム（floorplan, letter, case, amp, pedal）を生成。なければ null。
+   - id: "floorplan", "letter", "case", "amp", "pedal" のいずれか
+   - title: アイテム名
+   - description: 説明
+3. **newEvidence**: 公開共有用の客観的観察記録（1件）。
+   - title: 名称
+   - description: 観察事実
+`;
+
+            const payload = {
+                contents: [{ parts: [{ text: `フェーズ ${roomData.phaseIndex} 観察実行` }] }],
+                systemInstruction: { parts: [{ text: systemPrompt }] },
+                generationConfig: {
+                    responseMimeType: "application/json",
+                    responseSchema: {
+                        type: "OBJECT",
+                        properties: {
+                            narrative: { type: "STRING" },
+                            itemFound: {
+                                type: "OBJECT",
+                                nullable: true,
+                                properties: {
+                                    id: { type: "STRING" },
+                                    title: { type: "STRING" },
+                                    description: { type: "STRING" }
+                                },
+                                required: ["id", "title", "description"]
+                            },
+                            newEvidence: {
+                                type: "OBJECT",
+                                nullable: true,
+                                properties: {
+                                    title: { type: "STRING" },
+                                    description: { type: "STRING" }
+                                },
+                                required: ["title", "description"]
+                            }
+                        },
+                        required: ["narrative"]
+                    }
+                }
+            };
+
+            try {
+                const responseData = await fetchGeminiWithRetry(payload);
+                const result = JSON.parse(responseData);
+
+                const logs = roomData.timeline || [];
+                const evidences = roomData.evidences || [];
+
+                logs.push({
+                    type: 'ai-narrative',
+                    text: result.narrative
+                });
+
+                if (result.itemFound) {
+                    const uniqueItemId = `item-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`;
+                    myPrivateItems.push({
+                        id: uniqueItemId,
+                        baseType: result.itemFound.id,
+                        title: result.itemFound.title,
+                        description: result.itemFound.description
+                    });
+                    logs.push({
+                        type: 'system',
+                        text: `🔍 [調査獲得] 『${result.itemFound.title}』を獲得しました。`
+                    });
+                }
+
+                if (result.newEvidence) {
+                    evidences.push(result.newEvidence);
+                    logs.push({
+                        type: 'evidence',
+                        text: `📌 【観察事実の記録】${result.newEvidence.title}: ${result.newEvidence.description}`
+                    });
+                }
+
+                const nextIdx = roomData.phaseIndex + 1;
+                roomData.timeline = logs;
+                roomData.evidences = evidences;
+                roomData.commandsSubmitted = {};
+                roomData.phaseIndex = nextIdx < PHASE_SEQUENCE.length ? nextIdx : roomData.phaseIndex;
+
+                if (!isLocalFallbackMode && db && roomId) {
+                    const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', roomId);
+                    await updateDoc(roomRef, {
+                        timeline: logs,
+                        evidences: evidences,
+                        commandsSubmitted: {},
+                        phaseIndex: roomData.phaseIndex
+                    }).catch(e => console.log(e));
+                } else {
+                    renderActiveGameBoard();
+                }
+
+            } catch (err) {
+                console.error("AI Generation Error:", err);
+                showToast("AI通知", "観察記録を適用して進行します。");
+                renderActiveGameBoard();
+            } finally {
+                document.getElementById('ai-loading-bar').classList.add('hidden');
+            }
+        }
+
+        async function fetchGeminiWithRetry(payload, maxRetries = 5) {
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_NAME}:generateContent?key=${apiKey}`;
+            let delay = 1000;
+
+            for (let i = 0; i < maxRetries; i++) {
+                try {
+                    const res = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    if (res.ok) {
+                        const data = await res.json();
+                        return data.candidates?.[0]?.content?.parts?.[0]?.text;
+                    }
+                } catch (e) {}
+                await new Promise(r => setTimeout(r, delay));
+                delay *= 2;
+            }
+            throw new Error("API Limit Retry Exceeded");
+        }
+
+        function renderPrivateInventory() {
+            const container = document.getElementById('private-items-list');
+            const noMsg = document.getElementById('no-private-items');
+            document.getElementById('my-items-count').textContent = `${myPrivateItems.length}個所持`;
+
+            if (myPrivateItems.length > 0 && noMsg) noMsg.remove();
+
+            if (myPrivateItems.length === 0) {
+                const scenarioDefaults = SCENARIOS[selectedScenarioKey]?.defaultItems;
+                if (scenarioDefaults && myRoleKey && scenarioDefaults[myRoleKey]) {
+                    const defaultItem = scenarioDefaults[myRoleKey];
+                    myPrivateItems.push({
+                        id: `${defaultItem.id}-${Date.now()}`,
+                        baseType: defaultItem.baseType,
+                        title: defaultItem.title,
+                        description: defaultItem.description
+                    });
+                } else {
+                    myPrivateItems.push({
+                        id: 'item-default-' + Date.now(),
+                        baseType: 'floorplan',
+                        title: '現場の配置見取り図',
+                        description: '内部構造が記録された配置見取り図。'
+                    });
+                }
+            }
+
+            container.innerHTML = '';
+            myPrivateItems.forEach((item, index) => {
+                const card = document.createElement('div');
+                card.className = "bg-[#0f0905] p-2.5 border border-[#382618] space-y-2";
+                
+                card.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <div class="font-bold text-amber-400 text-[11px] flex items-center">
+                            <i class="fa-solid fa-image mr-1.5 text-amber-600"></i>${escapeHtml(item.title)}
+                        </div>
+                        <span class="text-[9px] bg-[#2b180d] text-amber-500 border border-[#4d2914] px-1.5 py-0.5">所有 #${index + 1}</span>
+                    </div>
+
+                    <div class="parchment-box p-1.5 text-center cursor-pointer hover:opacity-90 transition" onclick="openImageModalById('${item.id}', '${item.baseType}', '${escapeHtml(item.title)}', '${escapeHtml(item.description)}')">
+                        <span class="text-[10px] text-[#3b2415] font-bold block">${escapeHtml(item.title)}</span>
+                        <span class="text-[9px] text-[#7a5a3a] block pt-0.5"><i class="fa-solid fa-magnifying-glass-plus mr-1"></i>画像・図面を拡大検査</span>
+                    </div>
+
+                    <button onclick="shareItemToPublic('${escapeHtml(item.title)}')" type="button" class="w-full share-btn py-1 px-2 text-[10px] font-bold flex items-center justify-center space-x-1">
+                        <i class="fa-solid fa-share-nodes"></i>
+                        <span>メンバー全員にこの画像を公開共有する</span>
+                    </button>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function renderEvidences(evidences) {
+            const container = document.getElementById('shared-evidence-list');
+            const noText = document.getElementById('no-evidence-text');
+            document.getElementById('evidence-counter').textContent = `${evidences.length}件`;
+
+            if (evidences.length > 0 && noText) noText.remove();
+
+            container.innerHTML = '';
+            evidences.forEach(ev => {
+                const card = document.createElement('div');
+                card.className = "parchment-box p-2.5 text-[11px] space-y-1 animate-fade-in";
+                card.innerHTML = `
+                    <div class="font-bold text-[#3b2415] flex items-center">
+                        <i class="fa-solid fa-square-check mr-1.5 text-[#7a5a3a]"></i>${escapeHtml(ev.title)}
+                    </div>
+                    <div class="text-[#2e1e12]">${escapeHtml(ev.description)}</div>
+                `;
+                container.prepend(card);
+            });
+        }
+
+        function renderTimelineLogs() {
+            const container = document.getElementById('timeline-log');
+            container.innerHTML = '';
+
+            (roomData.timeline || []).forEach(log => {
+                const div = document.createElement('div');
+                div.className = "text-xs p-3 leading-relaxed ";
+
+                if (log.type === 'system') {
+                    div.className += "bg-[#0f0905] text-[#806a52] border border-[#2e1f12] text-center italic";
+                    div.textContent = log.text;
+                } else if (log.type === 'ai-narrative') {
+                    div.className += "bg-[#170e08] border border-[#332213] text-[#d8c6aa]";
+                    div.innerHTML = `<i class="fa-solid fa-eye text-amber-600 mr-1.5"></i><b>【AI現場観察結果】</b> ${escapeHtml(log.text)}`;
+                } else if (log.type === 'evidence') {
+                    div.className += "parchment-box text-[#2e1e12]";
+                    div.innerHTML = `<i class="fa-solid fa-square-check text-[#7a5a3a] mr-1.5"></i>${escapeHtml(log.text)}`;
+                } else if (log.type === 'chat') {
+                    div.className += "bg-[#170e08] border border-[#332213] text-[#d8c6aa]";
+                    div.innerHTML = `<span class="font-bold text-amber-500">${escapeHtml(log.sender)}:</span> ${escapeHtml(log.text)}`;
+                }
+
+                container.appendChild(div);
+            });
+
+            container.scrollTop = container.scrollHeight;
+        }
+
+        window.toggleHandoutView = () => {
+            const el = document.getElementById('collapsible-handout');
+            const chevron = document.getElementById('handout-chevron');
+            if (el.classList.contains('hidden')) {
+                el.classList.remove('hidden');
+                chevron.className = "fa-solid fa-chevron-up text-xs text-amber-500";
+            } else {
+                el.classList.add('hidden');
+                chevron.className = "fa-solid fa-chevron-down text-xs text-[#806a52]";
+            }
+        };
+
+        // Item Graphic Generator Fix (Matching Title/BaseType accurately)
+        function generateItemSvg(baseType, customTitle, customDesc) {
+            const titleLower = customTitle.toLowerCase();
+
+            if (baseType === 'guitar' || titleLower.includes('フライングv') || titleLower.includes('ギター')) {
+                return `
+                    <svg class="w-full h-64 border border-[#b39b78] bg-[#1a0f0a]" viewBox="0 0 400 250">
+                        <polygon points="120,40 180,40 280,210 230,220" fill="#a82424" stroke="#e04848" stroke-width="2"/>
+                        <line x1="140" y1="40" x2="245" y2="215" stroke="#382218" stroke-width="8"/>
+                        <line x1="160" y1="40" x2="265" y2="215" stroke="#382218" stroke-width="8"/>
+                        <line x1="145" y1="60" x2="175" y2="60" stroke="#d8c6aa" stroke-width="2"/>
+                        <line x1="160" y1="90" x2="195" y2="90" stroke="#d8c6aa" stroke-width="2"/>
+                        <line x1="180" y1="120" x2="218" y2="120" stroke="#d8c6aa" stroke-width="2"/>
+                        <polygon points="115,35 125,50 145,30 160,48 185,38" fill="#3b2215" stroke="#cc3333" stroke-width="2"/>
+                        <text x="110" y="240" font-size="11" font-family="serif" font-weight="bold" fill="#ff4d4d">★ 猛烈な打撃により破砕されたフライングVネック</text>
+                    </svg>
+                `;
+            } else if (baseType === 'case' || titleLower.includes('ケース') || titleLower.includes('ベース')) {
+                return `
+                    <svg class="w-full h-64 border border-[#b39b78] bg-[#211710]" viewBox="0 0 400 250">
+                        <rect x="20" y="20" width="360" height="210" fill="#120b07" stroke="#4a3523" stroke-width="4"/>
+                        <polygon points="40,40 360,40 340,210 60,210" fill="#2b1a10" stroke="#8a6343" stroke-width="2"/>
+                        <rect x="100" y="35" width="20" height="180" fill="#52361b"/>
+                        <rect x="280" y="35" width="20" height="180" fill="#52361b"/>
+                        <path d="M 310 180 Q 340 190 350 210" stroke="#cc2b2b" stroke-width="8" stroke-linecap="round" fill="none"/>
+                        <path d="M 300 175 Q 330 195 345 205" stroke="#ff4d4d" stroke-width="4" stroke-linecap="round" fill="none"/>
+                        <text x="110" y="235" font-size="11" font-family="serif" font-weight="bold" fill="#cc2b2b">★ ケース角に付着した赤ギター塗料痕</text>
+                    </svg>
+                `;
+            } else if (baseType === 'amp' || titleLower.includes('アンプ') || titleLower.includes('マーシャル') || titleLower.includes('ボリューム')) {
+                return `
+                    <svg class="w-full h-64 border border-[#b39b78] bg-[#1a120c]" viewBox="0 0 400 250">
+                        <rect x="30" y="20" width="340" height="210" fill="#120c08" stroke="#d4af37" stroke-width="3"/>
+                        <rect x="45" y="35" width="310" height="60" fill="#c9a759" stroke="#8c6d3f" stroke-width="2"/>
+                        <text x="140" y="70" font-size="22" font-family="serif" font-weight="bold" fill="#120c08">Marshall</text>
+                        <circle cx="80" cy="140" r="18" fill="#2b1c12" stroke="#d4af37" stroke-width="2"/>
+                        <line x1="80" y1="140" x2="95" y2="150" stroke="#ff3333" stroke-width="3"/>
+                        <text x="68" y="175" font-size="10" fill="#ff3333" font-weight="bold">VOL 10 (フルテン)</text>
+                        <circle cx="160" cy="140" r="18" fill="#2b1c12" stroke="#8c6d3f" stroke-width="2"/>
+                        <circle cx="240" cy="140" r="18" fill="#2b1c12" stroke="#8c6d3f" stroke-width="2"/>
+                        <circle cx="320" cy="140" r="18" fill="#2b1c12" stroke="#8c6d3f" stroke-width="2"/>
+                        <text x="110" y="215" font-size="11" font-family="serif" fill="#d8c6aa">爆音フィードバックノイズ設定記録</text>
+                    </svg>
+                `;
+            } else if (baseType === 'clock' || titleLower.includes('時計') || titleLower.includes('振り子')) {
+                return `
+                    <svg class="w-full h-64 border border-[#b39b78] bg-[#f2e5d0]" viewBox="0 0 400 250">
+                        <rect x="120" y="10" width="160" height="230" fill="#3b2415" stroke="#120c08" stroke-width="3"/>
+                        <circle cx="200" cy="70" r="50" fill="#ebdcc3" stroke="#8a6343" stroke-width="3"/>
+                        <line x1="200" y1="70" x2="200" y2="35" stroke="#120c08" stroke-width="3"/>
+                        <line x1="200" y1="70" x2="225" y2="70" stroke="#120c08" stroke-width="2"/>
+                        <line x1="200" y1="120" x2="190" y2="210" stroke="#c4974f" stroke-width="4"/>
+                        <circle cx="190" cy="210" r="18" fill="#d4af37" stroke="#8a6343" stroke-width="2"/>
+                        <text x="215" y="180" font-size="10" font-family="serif" font-weight="bold" fill="#a83232">熱収縮金属軸</text>
+                    </svg>
+                `;
+            } else if (baseType === 'floorplan' || titleLower.includes('見取り図') || titleLower.includes('図面') || titleLower.includes('配置') || titleLower.includes('間取り')) {
+                if (selectedScenarioKey === 'nken') {
+                    return `
+                        <svg class="w-full h-64 border border-[#b39b78] bg-[#f2e5d0]" viewBox="0 0 400 250">
+                            <rect x="10" y="10" width="380" height="230" fill="none" stroke="#2b1c12" stroke-width="3"/>
+                            <rect x="20" y="20" width="220" height="150" fill="#d0be9f" stroke="#2b1c12" stroke-width="2"/>
+                            <text x="65" y="70" font-size="14" font-family="serif" font-weight="bold" fill="#2b1c12">N研部室メインステージ</text>
+                            <text x="45" y="95" font-size="10" font-family="sans-serif" fill="#7a5a3a">・マーシャルアンプ（Volume 10）</text>
+                            <text x="45" y="110" font-size="10" font-family="sans-serif" fill="#7a5a3a">・壊れたフライングVギター位置</text>
+                            <rect x="260" y="20" width="120" height="110" fill="#e0ceb2" stroke="#2b1c12" stroke-width="2"/>
+                            <text x="275" y="60" font-size="11" font-family="serif" font-weight="bold" fill="#2b1c12">ドラム＆機材庫</text>
+                            <rect x="40" y="180" width="160" height="50" fill="#c4b090" stroke="#a83232" stroke-width="2"/>
+                            <text x="50" y="210" font-size="10" font-family="serif" font-weight="bold" fill="#a83232">★ ベースケース打撃痕跡</text>
+                        </svg>
+                    `;
+                } else if (selectedScenarioKey === 'pendulum') {
+                    return `
+                        <svg class="w-full h-64 border border-[#b39b78] bg-[#f2e5d0]" viewBox="0 0 400 250">
+                            <rect x="10" y="10" width="380" height="230" fill="none" stroke="#2b1c12" stroke-width="3"/>
+                            <rect x="20" y="20" width="180" height="150" fill="#d0be9f" stroke="#2b1c12" stroke-width="2"/>
+                            <text x="75" y="80" font-size="14" font-family="serif" font-weight="bold" fill="#2b1c12">書斎 (密室)</text>
+                            <text x="45" y="105" font-size="10" font-family="sans-serif" fill="#7a5a3a">・時任遺体発見地点</text>
+                            <rect x="220" y="20" width="160" height="90" fill="#e0ceb2" stroke="#2b1c12" stroke-width="2"/>
+                            <text x="260" y="60" font-size="12" font-family="serif" font-weight="bold" fill="#2b1c12">隣の空き部屋</text>
+                            <path d="M 200 65 L 220 65" stroke="#a83232" stroke-width="3" stroke-dasharray="3,3"/>
+                            <text x="182" y="55" font-size="9" fill="#a83232" font-weight="bold">空調ダクト直結配管</text>
+                        </svg>
+                    `;
+                } else {
+                    return `
+                        <svg class="w-full h-64 border border-[#b39b78] bg-[#f2e5d0]" viewBox="0 0 400 250">
+                            <rect x="10" y="10" width="380" height="230" fill="none" stroke="#2b1c12" stroke-width="3"/>
+                            <rect x="20" y="20" width="220" height="150" fill="#d0be9f" stroke="#2b1c12" stroke-width="2"/>
+                            <text x="65" y="70" font-size="14" font-family="serif" font-weight="bold" fill="#2b1c12">豪華客船舞踏会場</text>
+                        </svg>
+                    `;
+                }
+            } else {
+                // Documents / Letters Rendering (Shows ACTUAL Item Description, NO Generic Text)
+                return `
+                    <div class="border-2 border-dashed border-[#8c6d3f] p-6 bg-[#f5e9d3] font-serif text-xs text-[#3d2412] text-left leading-relaxed shadow-inner">
+                        <p class="text-sm font-bold border-b border-[#a89070] pb-2 mb-3">『${escapeHtml(customTitle)}』</p>
+                        <p class="text-xs leading-relaxed text-[#2b1c12]">
+                            ${escapeHtml(customDesc || customTitle)}
+                        </p>
+                    </div>
+                `;
+            }
+        }
+
+        window.openImageModalById = (itemId, baseType, customTitle, customDesc) => {
+            const container = document.getElementById('modal-image-container');
+            const title = document.getElementById('modal-image-title');
+
+            title.innerHTML = `<i class="fa-solid fa-image mr-2 text-amber-600"></i>`;
+
+            const svgContent = generateItemSvg(baseType, customTitle, customDesc);
+            container.innerHTML = `
+                ${svgContent}
+                <p class="text-[11px] text-[#3b2415] pt-2 font-bold">【観察記録】${escapeHtml(customDesc || customTitle)}</p>
+            `;
+
+            document.getElementById('image-modal').classList.remove('hidden');
+        };
+
+        window.closeImageModal = () => {
+            document.getElementById('image-modal').classList.add('hidden');
+        };
+
+        window.shareItemToPublic = async (itemName) => {
+            const myUid = currentUser?.uid || 'local-user-id';
+            const evidences = roomData.evidences || [];
+            const logs = roomData.timeline || [];
+
+            const senderName = roomData.players[myUid]?.name || '参列者';
+
+            evidences.push({
+                title: `[共有画像アイテム] ${itemName}`,
+                description: `${senderName}によってビジュアル画像つきで全員に共有された図面・手掛かり。`
+            });
+
+            logs.push({
+                type: 'system',
+                text: `【画像アイテム公開】${senderName}が所持アイテム『${itemName}』の図面画像を全員に共有しました。`
+            });
+
+            roomData.evidences = evidences;
+            roomData.timeline = logs;
+
+            if (!isLocalFallbackMode && db && roomId) {
+                const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', roomId);
+                await updateDoc(roomRef, {
+                    evidences: evidences,
+                    timeline: logs
+                }).catch(e => console.log(e));
+            } else {
+                renderActiveGameBoard();
+            }
+
+            showToast("公開完了", `『${itemName}』をメンバー全員に共有しました。`);
+        };
+
+        window.openVoteModal = () => {
+            if (roomData && roomData.status === 'ended') {
+                showToast("案内", "事件は解決し、真相確認フェーズです。");
+                return;
+            }
+
+            const list = document.getElementById('vote-candidates-list');
+            list.innerHTML = '';
+
+            const activeRoles = SCENARIOS[selectedScenarioKey].roles;
+
+            Object.keys(activeRoles).forEach(roleKey => {
+                const label = document.createElement('label');
+                label.className = "block p-2.5 bg-[#0f0905] border border-[#2e1f12] hover:border-amber-600 cursor-pointer flex items-center space-x-2";
+                label.innerHTML = `
+                    <input type="radio" name="suspect-vote" value="${roleKey}">
+                    <span class="font-bold text-[#ebdcc3]">${activeRoles[roleKey].name}</span>
+                `;
+                list.appendChild(label);
+            });
+
+            document.getElementById('vote-modal').classList.remove('hidden');
+        };
+
+        window.closeVoteModal = () => {
+            document.getElementById('vote-modal').classList.add('hidden');
+        };
+
+        window.submitFinalVote = async () => {
+            const selected = document.querySelector('input[name="suspect-vote"]:checked');
+            if (!selected) {
+                alert('指名する人物を選択してください。');
+                return;
+            }
+
+            const myUid = currentUser?.uid || 'local-user-id';
+            const votes = roomData.votes || {};
+            votes[myUid] = {
+                voter: roomData.players[myUid]?.name || 'あなた',
+                targetRole: selected.value,
+                reason: document.getElementById('vote-reasoning-input').value.trim()
+            };
+
+            roomData.votes = votes;
+            closeVoteModal();
+
+            if (!isLocalFallbackMode && db && roomId) {
+                const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', roomId);
+                await updateDoc(roomRef, { votes: votes }).catch(e => console.log(e));
+            }
+
+            if (Object.keys(votes).length >= Object.keys(roomData.players).length || isLocalFallbackMode) {
+                processMultiEndingResolution(votes);
+            } else {
+                showToast("投票完了", "他の参加者の投票完了を待っています。");
+            }
+        };
+
+        async function processMultiEndingResolution(votes) {
+            document.getElementById('ai-loading-bar').classList.remove('hidden');
+
+            const activeScenario = SCENARIOS[selectedScenarioKey];
+            const culpritKey = activeScenario.culpritRoleKey;
+
+            const voteCounts = {};
+            Object.values(votes).forEach(v => {
+                voteCounts[v.targetRole] = (voteCounts[v.targetRole] || 0) + 1;
+            });
+
+            let topTarget = null;
+            let maxVotes = -1;
+            Object.keys(voteCounts).forEach(rk => {
+                if (voteCounts[rk] > maxVotes) {
+                    maxVotes = voteCounts[rk];
+                    topTarget = rk;
+                }
+            });
+
+            const isTrueEnding = (topTarget === culpritKey);
+
+            const scores = {};
+            const accusedMap = roomData.accusedMap || {};
+
+            Object.keys(roomData.players).forEach(uid => {
+                const playerVote = votes[uid]?.targetRole;
+                let score = 0;
+                
+                if (playerVote === culpritKey) score += 50;
+
+                const timesAccused = accusedMap[uid] || 0;
+                if (timesAccused === 0) {
+                    score += 30;
+                } else if (timesAccused === 1) {
+                    score += 15;
+                }
+
+                score += 20;
+
+                let rank = "S (伝説の探偵)";
+                if (score < 60) rank = "C (迷探偵)";
+                else if (score < 80) rank = "B (名探偵補佐)";
+                else if (score < 100) rank = "A (名探偵)";
+
+                scores[roomData.players[uid].name] = { score: score, rank: rank };
+            });
+
+            const systemPrompt = `
+あなたはマーダーミステリー『${activeScenario.title}』のエンディング生成AIです。
+
+【指名結果】
+- 真犯人の正体: ${activeScenario.roles[culpritKey]?.name}
+- 最多得票者: ${activeScenario.roles[topTarget]?.name || '未指名'}
+- 真相解明成功フラグ: ${isTrueEnding}
+
+【要求するJSON出力】
+1. **endingType**: True Ending（成功）、Bad Ending（失敗）、Secret Endingのいずれか。
+2. **title**: タイトル。
+3. **epilogue**: 犯人指名結果と事件の真の全貌を描いたエピローグ文章（300文字程度）。
+`;
+
+            const payload = {
+                contents: [{ parts: [{ text: `エンディング生成` }] }],
+                systemInstruction: { parts: [{ text: systemPrompt }] },
+                generationConfig: {
+                    responseMimeType: "application/json",
+                    responseSchema: {
+                        type: "OBJECT",
+                        properties: {
+                            endingType: { type: "STRING" },
+                            title: { type: "STRING" },
+                            epilogue: { type: "STRING" }
+                        },
+                        required: ["endingType", "title", "epilogue"]
+                    }
+                }
+            };
+
+            try {
+                const responseData = await fetchGeminiWithRetry(payload);
+                const result = JSON.parse(responseData);
+
+                roomData.status = 'ended';
+                roomData.endingData = result;
+                roomData.finalScores = scores;
+
+                if (!isLocalFallbackMode && db && roomId) {
+                    const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', roomId);
+                    await updateDoc(roomRef, {
+                        status: 'ended',
+                        endingData: result,
+                        finalScores: scores
+                    }).catch(e => console.log(e));
+                } else {
+                    renderEndingResult();
+                }
+
+            } catch (err) {
+                console.error("Ending Error:", err);
+                roomData.status = 'ended';
+                roomData.endingData = {
+                    endingType: isTrueEnding ? 'True Ending' : 'Bad Ending',
+                    title: isTrueEnding ? '真実の証明' : '迷宮入り',
+                    epilogue: '指名結果が確定し、事件の真相が判明しました。'
+                };
+                roomData.finalScores = scores;
+                renderEndingResult();
+            } finally {
+                document.getElementById('ai-loading-bar').classList.add('hidden');
+            }
+        }
+
+        function renderEndingResult() {
+            document.getElementById('vote-modal-trigger-btn').classList.add('hidden');
+            document.getElementById('next-phase-trigger-btn').classList.add('hidden');
+            document.getElementById('command-phase-inputs').classList.add('hidden');
+            document.getElementById('discussion-phase-inputs').classList.add('hidden');
+
+            const phaseBadge = document.getElementById('phase-badge');
+            const phaseText = document.getElementById('phase-text');
+            if (phaseText) phaseText.textContent = "事件完了 : 真相確認";
+            if (phaseBadge) phaseBadge.className = "px-3 py-1 text-xs font-semibold text-[#ebdcc3] flex items-center space-x-2 bg-[#3b1515] border border-[#5e1f1f]";
+
+            const container = document.getElementById('timeline-log');
+            const activeScenario = SCENARIOS[selectedScenarioKey];
+            const truth = activeScenario.truthExplanation;
+
+            const endData = roomData.endingData || {
+                endingType: 'Ending',
+                title: '事件の真相',
+                epilogue: '事件は幕を閉じました。'
+            };
+
+            const scores = roomData.finalScores || {};
+            let scoreBoardHtml = `<div class="bg-[#0f0905] p-3 border border-[#332213] my-2 text-left space-y-1"><b class="text-amber-500 block">【推理採点＆個人サブミッション結果】</b>`;
+            Object.keys(scores).forEach(pName => {
+                scoreBoardHtml += `<div class="text-[11px] text-[#ebdcc3] flex justify-between"><span>👤 ${escapeHtml(pName)}</span><span class="font-bold text-amber-400">${scores[pName].score}点 / ランク ${scores[pName].rank}</span></div>`;
+            });
+            scoreBoardHtml += `</div>`;
+
+            let truthExplanationHtml = '';
+            if (truth) {
+                let cluesListHtml = (truth.clues || []).map(c => `
+                    <div class="bg-[#170e08] p-2 border border-[#332213] space-y-0.5 text-[11px]">
+                        <span class="font-bold text-amber-400 block">📌 手がかり: ${escapeHtml(c.name)}</span>
+                        <span class="text-[#d8c6aa] block">${escapeHtml(c.reason)}</span>
+                    </div>
+                `).join('');
+
+                truthExplanationHtml = `
+                    <div class="parchment-box p-4 text-xs text-[#2e1e12] text-left leading-relaxed space-y-3">
+                        <div class="font-bold text-[#3b2415] border-b border-[#c8b493] pb-1 flex justify-between items-center text-sm">
+                            <span>🔍 真相・トリックの解明ロジック</span>
+                            <span class="text-xs text-amber-800 font-normal">真犯人: <b>${escapeHtml(truth.culpritName)}</b></span>
+                        </div>
+
+                        <div class="space-y-1">
+                            <b class="text-[#3b2415] block">【犯行手段（ハウダニット）】</b>
+                            <p class="text-[#2e1e12] font-serif">${escapeHtml(truth.method)}</p>
+                        </div>
+
+                        <div class="space-y-1.5 pt-1">
+                            <b class="text-[#3b2415] block">【関連するヒント・手がかりのロジック解説】</b>
+                            <div class="space-y-1.5">${cluesListHtml}</div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            container.innerHTML = `
+                <div class="p-6 bg-[#17100b] border-2 border-amber-800 space-y-4 text-center">
+                    <span class="text-xs text-amber-500 font-bold tracking-widest uppercase">[ ${escapeHtml(endData.endingType)} ]</span>
+                    <h2 class="text-xl font-bold title-serif text-[#f2e6d3]">${escapeHtml(endData.title)}</h2>
+                    
+                    ${scoreBoardHtml}
+
+                    <div class="parchment-box p-5 text-xs text-[#2e1e12] text-left leading-relaxed space-y-3">
+                        <div class="font-bold text-[#3b2415] border-b border-[#c8b493] pb-1">【結末エピローグ】</div>
+                        <p class="whitespace-pre-line text-[#2e1e12]">${escapeHtml(endData.epilogue)}</p>
+                    </div>
+
+                    ${truthExplanationHtml}
+
+                    <button onclick="resetToLobby()" type="button" class="px-6 py-2.5 classic-btn font-bold text-xs text-amber-200 shadow-lg hover:scale-105 transition-transform">
+                        <i class="fa-solid fa-rotate-left mr-1.5"></i>ロビーに戻り別のシナリオで遊ぶ
+                    </button>
+                </div>
+            `;
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&<>"']/g, function(m) {
+                return {
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    '"': '&quot;',
+                    "'": '&#039;'
+                }[m];
+            });
+        }
+
+        // Initialize Event Listeners
+        document.addEventListener('DOMContentLoaded', () => {
+            const createBtn = document.getElementById('create-room-btn');
+            const joinBtn = document.getElementById('join-room-btn');
+            const startBtn = document.getElementById('start-game-btn');
+            const readyBtn = document.getElementById('ready-phase-btn');
+            const submitCmdBtn = document.getElementById('submit-command-btn');
+
+            if (createBtn) createBtn.addEventListener('click', createNewRoom);
+            if (joinBtn) joinBtn.addEventListener('click', joinExistingRoom);
+            if (startBtn) startBtn.addEventListener('click', advanceToHandoutPhase);
+            if (readyBtn) readyBtn.addEventListener('click', readyForFirstRound);
+            if (submitCmdBtn) submitCmdBtn.addEventListener('click', submitInvestigationCommand);
+        });
+    </script>
+</body>
+</html>
