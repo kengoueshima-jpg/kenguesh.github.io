@@ -539,35 +539,35 @@
             setTimeout(() => toast.classList.add('hidden'), 4000);
         }
 
-        // Safe Firebase Initialization
-        try {
-            appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-            let firebaseConfig = null;
-            if (typeof __firebase_config !== 'undefined' && __firebase_config) {
-                firebaseConfig = JSON.parse(__firebase_config);
-            }
-
-            if (firebaseConfig) {
-                const app = initializeApp(firebaseConfig);
-                auth = getAuth(app);
-                db = getFirestore(app);
-
-                onAuthStateChanged(auth, (user) => {
-                    currentUser = user;
-                });
-
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    signInWithCustomToken(auth, __initial_auth_token).catch(() => signInAnonymously(auth));
-                } else {
-                    signInAnonymously(auth).catch((e) => console.log("Auth error:", e));
-                }
-            } else {
-                isLocalFallbackMode = true;
-            }
-        } catch (e) {
-            console.warn("Firebase init fallback:", e);
-            isLocalFallbackMode = true;
-        }
+    // Safe Firebase Initialization
+    try {
+        appId = 'my-mystery-app'; 
+    
+        const firebaseConfig = {
+        apiKey: "AIzaSyBgZMmerETqM1CapiV5x4Yz4J2QF0svbJ8",
+        authDomain: "project-2461c5cf-3cf5-40fc-a17.firebaseapp.com",
+        projectId: "project-2461c5cf-3cf5-40fc-a17",
+        storageBucket: "project-2461c5cf-3cf5-40fc-a17.firebasestorage.app",
+        messagingSenderId: "761691089743",
+        appId: "1:761691089743:web:5bcd4a16500a52569af33a"
+        };
+    
+        const app = initializeApp(firebaseConfig);
+        auth = getAuth(app);
+        db = getFirestore(app);
+    
+        onAuthStateChanged(auth, (user) => {
+            currentUser = user;
+        });
+    
+        // 匿名ログインを実行
+        signInAnonymously(auth).catch((e) => console.log("Auth error:", e));
+        isLocalFallbackMode = false;
+    
+    } catch (e) {
+        console.warn("Firebase init fallback:", e);
+        isLocalFallbackMode = true;
+    }
 
         async function ensureAuth() {
             if (currentUser) return currentUser;
